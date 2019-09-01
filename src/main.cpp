@@ -87,6 +87,111 @@ void setup()
   dishesHi = config.dishesHi;
   lawnLo = config.lawnLo;
   lawnHi = config.lawnHi;
+
+  //set defaults
+  showerLo = 500;
+  showerHi = 500;
+  toiletLo = 500;
+  toiletHi = 500;
+  sinkLo = 500;
+  sinkHi = 500;
+  dishesLo = 500;
+  dishesHi = 500;
+  lawnLo = 500;
+  lawnHi = 500;
+
+  startTime = millis();
+  endTime = startTime;
+  while ((endTime - startTime) <= countdown)
+  {
+    int showerRaw = (analogRead(POTA));
+    if (showerRaw < showerLo)
+    {
+      showerLo = showerRaw;
+      Serial.print("\n showerLo is now:");
+      Serial.print(showerLo);
+    }
+    if (showerRaw > showerHi)
+    {
+      showerHi = showerRaw;
+      Serial.print("\n showerHi is now:");
+      Serial.print(showerHi);
+    }
+
+    int toiletRaw = (analogRead(POTB));
+    if (toiletRaw < toiletLo)
+    {
+      toiletLo = toiletRaw;
+      Serial.print("\n toiletLo is now:");
+      Serial.print(toiletLo);
+    }
+    if (toiletRaw > toiletHi)
+    {
+      toiletHi = toiletRaw;
+      Serial.print("\n toiletHi is now:");
+      Serial.print(toiletHi);
+    }
+
+    int sinkRaw = (analogRead(POTC));
+    if (sinkRaw < sinkLo)
+    {
+      sinkLo = sinkRaw;
+      Serial.print("\n sinkLo is now:");
+      Serial.print(sinkLo);
+    }
+    if (sinkRaw > sinkHi)
+    {
+      sinkHi = sinkRaw;
+      Serial.print("\n sinkHi is now:");
+      Serial.print(sinkHi);
+    }
+
+    int dishesRaw = (analogRead(POTF));
+    if (dishesRaw < dishesLo)
+    {
+      dishesLo = dishesRaw;
+      Serial.print("\n dishesLo is now:");
+      Serial.print(dishesLo);
+    }
+    if (dishesRaw > dishesHi)
+    {
+      dishesHi = dishesRaw;
+      Serial.print("\n dishesHi is now:");
+      Serial.print(dishesHi);
+    }
+
+    int laundryRaw = (analogRead(POTE));
+    if (laundryRaw < laundryLo)
+    {
+      laundryLo = laundryRaw;
+      Serial.print("\n laundryLo is now:");
+      Serial.print(laundryLo);
+    }
+    if (laundryRaw > laundryHi)
+    {
+      laundryHi = laundryRaw;
+      Serial.print("\n laundryHi is now:");
+      Serial.print(laundryHi);
+    }
+
+    int lawnRaw = (analogRead(POTD));
+    if (lawnRaw < lawnLo)
+    {
+      lawnLo = lawnRaw;
+      Serial.print("\n lawnLo is now:");
+      Serial.print(lawnLo);
+    }
+    if (lawnRaw > lawnHi)
+    {
+      lawnHi = lawnRaw;
+      Serial.print("\n lawnHi is now:");
+      Serial.print(lawnHi);
+    }
+
+    endTime = millis();
+    int seconds = (endTime - startTime) / 1000;
+    // Serial.println(seconds);
+  }
 }
 
 void loop()
@@ -95,19 +200,6 @@ void loop()
 
   matrix.begin();
 
-  startTime = millis();
-  endTime = startTime;
-  while ((endTime - startTime) <= countdown)
-  {
-    //do calibration
-
-
-
-    endTime = millis();
-    int seconds = (endTime - startTime) / 1000;
-    Serial.println(seconds);
-  }
-
   int showerRaw = (analogRead(POTA));
   int toiletRaw = (analogRead(POTB));
   int sinkRaw = (analogRead(POTC));
@@ -115,7 +207,7 @@ void loop()
   int laundryRaw = (analogRead(POTE));
   int lawnRaw = (analogRead(POTD));
 
-  int mappedShower = map(showerRaw, showerLo, showerHi, 0, 40);
+  int mappedShower = map(showerRaw, showerHi, showerLo, 0, 41);
 
   mappedVal = (mappedShower);
   //mappedVal= mappedWater;
