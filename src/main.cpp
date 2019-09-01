@@ -50,22 +50,42 @@ int lawnHi;
 int laundryLo;
 int laundryHi;
 
-RGBmatrixPanel matrix(A, B, C, CLK, LAT, OE, true);
-
-void calibrate(int countdown)
+struct config_t
 {
-  time = millis();
-  while (time < countdown)
-  {
-    /* code */
-  }
-}
+  //calibration variables store raw readouts of softpots
+  int showerLo;
+  int showerHi;
+  int toiletLo;
+  int toiletHi;
+  int sinkLo;
+  int sinkHi;
+  int dishesLo;
+  int dishesHi;
+  int lawnLo;
+  int lawnHi;
+  int laundryLo;
+  int laundryHi;
+};
+
+RGBmatrixPanel matrix(A, B, C, CLK, LAT, OE, true);
 
 void setup()
 {
+  Serial.begin(9600);
   // load saved calibration values from eeprom
-  showerLo = 942;
-  showerHi = 60;
+  config_t config; // = {950, 0, 940, 0, 930, 0, 900, 0, 940, 0, 930, 0};
+  EEPROM.get(0, config);
+  Serial.println("read from EEPROM");
+  showerLo = config.showerLo;
+  showerHi = config.showerHi;
+  toiletLo = config.toiletLo;
+  toiletHi = config.toiletHi;
+  sinkLo = config.sinkLo;
+  sinkHi = config.sinkHi;
+  dishesLo = config.dishesLo;
+  dishesHi = config.dishesHi;
+  lawnLo = config.lawnLo;
+  lawnHi = config.lawnHi;
 }
 
 void loop()
