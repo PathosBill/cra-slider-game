@@ -1,7 +1,19 @@
+/*
+cra-slider-game, 2014-2019 Musework Exhibits, LLC
+created for Colorado River Alliance's Mobile River traveling exhibit.
+This code runs on an Arduino Mega attached to 6 linear softpots.
+This allows a user to estimate their weekly water consumption by changing the slider / softpot
+values.
+
+MIT-license
+*/
+
 #include <Arduino.h>
 #include <Adafruit_GFX.h>   // Core graphics library
 #include <RGBmatrixPanel.h> // Hardware-specific library
-#include <SPI.h>
+#include <SPI.h>            // print to serial for debug. Adafruit_GFX wants it as a dependency
+#include <EEPROM.h>         // EEPROM allows us to save and load variables between sessions
+#include "EEPROMAnything.h"
 
 //define output pins for RGBmatrix
 #define CLK 11 // MUST be on PORTB! (Use pin 11 on Mega)
@@ -21,11 +33,39 @@
 // global variables
 int mappedVal = 0;
 int hue = 0;
+unsigned long countdown = 60000; //countdown time IN MSEC!!!
+unsigned long time;
+
+//calibration variables store raw readouts of softpots
+int showerLo;
+int showerHi;
+int toiletLo;
+int toiletHi;
+int sinkLo;
+int sinkHi;
+int dishesLo;
+int dishesHi;
+int lawnLo;
+int lawnHi;
+int laundryLo;
+int laundryHi;
 
 RGBmatrixPanel matrix(A, B, C, CLK, LAT, OE, true);
 
+void calibrate(int countdown)
+{
+  time = millis();
+  while (time < countdown)
+  {
+    /* code */
+  }
+}
+
 void setup()
 {
+  // load saved calibration values from eeprom
+  showerLo = 942;
+  showerHi = 60;
 }
 
 void loop()
@@ -36,12 +76,14 @@ void loop()
 
   int shower = (analogRead(POTA));
   int toilet = (analogRead(POTB));
-  int water = (analogRead(POTC));
+  int sink = (analogRead(POTC));
   int dishes = (analogRead(POTF));
   int laundry = (analogRead(POTE));
   int lawn = (analogRead(POTD));
 
-  mappedVal = (shower);
+  int mappedShower = map(shower, showerLo, showerHi, 0, 40);
+
+  mappedVal = (mappedShower);
   //mappedVal= mappedWater;
   // mappedVal= water;
 
