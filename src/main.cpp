@@ -34,7 +34,8 @@ MIT-license
 int mappedVal = 0;
 int hue = 0;
 unsigned long countdown = 60000; //countdown time IN MSEC!!!
-unsigned long time;
+unsigned long endTime;
+unsigned long startTime;
 
 //calibration variables store raw readouts of softpots
 int showerLo;
@@ -94,14 +95,27 @@ void loop()
 
   matrix.begin();
 
-  int shower = (analogRead(POTA));
-  int toilet = (analogRead(POTB));
-  int sink = (analogRead(POTC));
-  int dishes = (analogRead(POTF));
-  int laundry = (analogRead(POTE));
-  int lawn = (analogRead(POTD));
+  startTime = millis();
+  endTime = startTime;
+  while ((endTime - startTime) <= countdown)
+  {
+    //do calibration
 
-  int mappedShower = map(shower, showerLo, showerHi, 0, 40);
+
+
+    endTime = millis();
+    int seconds = (endTime - startTime) / 1000;
+    Serial.println(seconds);
+  }
+
+  int showerRaw = (analogRead(POTA));
+  int toiletRaw = (analogRead(POTB));
+  int sinkRaw = (analogRead(POTC));
+  int dishesRaw = (analogRead(POTF));
+  int laundryRaw = (analogRead(POTE));
+  int lawnRaw = (analogRead(POTD));
+
+  int mappedShower = map(showerRaw, showerLo, showerHi, 0, 40);
 
   mappedVal = (mappedShower);
   //mappedVal= mappedWater;
