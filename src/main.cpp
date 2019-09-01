@@ -190,8 +190,19 @@ void setup()
 
     endTime = millis();
     int seconds = (endTime - startTime) / 1000;
+    if (seconds % 15 == 0)
+    {
+      Serial.print(seconds);
+    }
+    
     // Serial.println(seconds);
   }
+
+  //write to config
+  config = {showerLo, showerHi, toiletLo, toiletHi, sinkLo, sinkHi, dishesLo, dishesHi, laundryLo, laundryHi, lawnLo, lawnHi};
+  EEPROM.put(0, config);
+  Serial.print("writing config to EEPROM");
+
 }
 
 void loop()
