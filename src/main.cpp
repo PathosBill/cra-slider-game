@@ -54,6 +54,7 @@ long readings[numReadings];      // the readings from mappedVal
 int readIndex = 0;              // the index of the current reading
 long total = 0;                  // the running total
 long average = 0;                // the average
+int prevLawn = 500;
 
 
 //calibration variables store raw readouts of softpots
@@ -122,11 +123,12 @@ void setup()
   {
     readings[thisReading] = 0;
   }
+
+  //inititalize prev laundry
 }
 
 void loop()
 {
-
   matrix.begin();
 
   // read the state of the switch into a local variable:
@@ -222,10 +224,27 @@ void loop()
   {
     mappedLaundry = 30;
   }
+
+  
   
   int mappedLawn = map(lawnRaw, lawnHi , lawnLo , -10 , 1000);
-  int prevLawn = 300;
- 
+  
+  // b/c the range of the lawn slider is so great, the input appears
+  // noisier than the others, with ranges jumping up and down by about
+  // 1-5. This statement only changes the value for mappedLawn if
+  // it's over a threshold of 5.
+
+  if (abs(mappedLawn - prevLawn) > 5)
+  {
+    prevLawn = mappedLawn;
+  } else
+  {
+    mappedLawn = prevLawn;
+  }
+  
+  
+  
+
   if (mappedLawn < 10)
   {
     mappedLawn = 0;
@@ -235,26 +254,11 @@ void loop()
     mappedLawn = 900;
   }
   
-  if (abs(mappedLawn - prevLawn) < 10)
-  {
-    mappedLawn = prevLawn;
-  } else
-  {
-    prevLawn = mappedLawn;
-  }
-  
-  
-  
-  
-  
-  
-
-   
   
 
   int rawMapped = (mappedShower + mappedToilet + mappedSink + mappedDishes + mappedLaundry + mappedLawn);
   
-  mappedVal = mappedLawn;
+  mappedVal = rawMapped;
   
   if (mappedVal < 0)
   {
