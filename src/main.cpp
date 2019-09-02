@@ -33,9 +33,17 @@ MIT-license
 // global variables
 int mappedVal = 0;
 int hue = 0;
-unsigned long countdown = 60000; //countdown time IN MSEC!!!
+unsigned long countdown = 30000; //countdown time IN MSEC!!!
 unsigned long endTime;
 unsigned long startTime;
+
+//variables for smoothing output
+const int numReadings = 100; 
+int readings[numReadings];      // the readings from mappedVal
+int readIndex = 0;              // the index of the current reading
+int total = 0;                  // the running total
+int average = 0;                // the average
+
 
 //calibration variables store raw readouts of softpots
 int showerLo;
@@ -77,6 +85,8 @@ void setup()
   config_t config; // = {950, 0, 940, 0, 930, 0, 900, 0, 940, 0, 930, 0};
   EEPROM.get(0, config);
   Serial.println("read from EEPROM");
+ 
+  //load values from config struct
   showerLo = config.showerLo;
   showerHi = config.showerHi;
   toiletLo = config.toiletLo;
@@ -88,6 +98,16 @@ void setup()
   lawnLo = config.lawnLo;
   lawnHi = config.lawnHi;
 
+  // initialize all the readings to 0:
+  for (int thisReading = 0; thisReading < numReadings; thisReading++) 
+  {
+    readings[thisReading] = 0;
+  }
+
+  
+
+  //begin calibration code
+  
   //set defaults
   showerLo = 500;
   showerHi = 500;
@@ -104,6 +124,7 @@ void setup()
   endTime = startTime;
   while ((endTime - startTime) <= countdown)
   {
+    matrix.begin();
     int showerRaw = (analogRead(POTA));
     if (showerRaw < showerLo)
     {
@@ -152,12 +173,14 @@ void setup()
       dishesLo = dishesRaw;
       Serial.print("\n dishesLo is now:");
       Serial.print(dishesLo);
+  
     }
     if (dishesRaw > dishesHi)
     {
       dishesHi = dishesRaw;
       Serial.print("\n dishesHi is now:");
       Serial.print(dishesHi);
+     
     }
 
     int laundryRaw = (analogRead(POTE));
@@ -166,12 +189,14 @@ void setup()
       laundryLo = laundryRaw;
       Serial.print("\n laundryLo is now:");
       Serial.print(laundryLo);
+      
     }
     if (laundryRaw > laundryHi)
     {
       laundryHi = laundryRaw;
       Serial.print("\n laundryHi is now:");
       Serial.print(laundryHi);
+     
     }
 
     int lawnRaw = (analogRead(POTD));
@@ -180,22 +205,95 @@ void setup()
       lawnLo = lawnRaw;
       Serial.print("\n lawnLo is now:");
       Serial.print(lawnLo);
+      
     }
     if (lawnRaw > lawnHi)
     {
       lawnHi = lawnRaw;
       Serial.print("\n lawnHi is now:");
       Serial.print(lawnHi);
+    
     }
 
     endTime = millis();
     int seconds = (endTime - startTime) / 1000;
-    if (seconds % 15 == 0)
-    {
-      Serial.print(seconds);
-    }
+    mappedVal = 30 - seconds;
     
-    // Serial.println(seconds);
+    
+    char strIn[3];
+    String tempStr;
+
+    tempStr = String(mappedVal);   //convert int to string
+    tempStr.toCharArray(strIn, 4); // pass values to char array
+
+    char digit1 = strIn[0];
+    char digit2 = strIn[1];
+    char digit3 = strIn[2];
+
+    //if(abs(mappedVal-curVal > 3)
+    // fill the screen with 'black'
+    matrix.fillScreen(matrix.Color333(0, 0, 0));
+
+    // draw some text!
+
+    matrix.setTextSize(1); // size 1 == 8 pixels high
+    matrix.setTextColor(matrix.ColorHSV(hue, 255, 255, true));
+    // matrix.setCursor(0,8);
+    // matrix.print(mappedVal);
+    //matrix.print(digit1);
+    // matrix.print(digit2);
+    // matrix.print(digit3);
+
+    //matrix.fillScreen(matrix.Color333(0, 0, 0));
+    //delay (100);
+    if (mappedVal < 10)
+    {
+      matrix.setCursor(22, 0); //set right digit
+      matrix.print(digit1);
+
+      //matrix.setCursor(18, 0); //set mid digit
+      //matrix.print(0);
+
+      //matrix.setCursor(0, 0); //set left digit
+      //matrix.print(0);
+    }
+
+    else if (mappedVal > 9 && mappedVal < 100)
+    {
+
+      matrix.setCursor(22, 0); //set right digit
+      matrix.print(digit2);
+
+      matrix.setCursor(16, 0); //set mid digit
+      matrix.print(digit1);
+
+      //matrix.setCursor(0, 0); //set left digit
+      //matrix.print(0);
+    }
+    else
+    {
+      matrix.setCursor(22, 0); //set right digit
+      matrix.print(digit3);
+
+      matrix.setCursor(16, 0); //set mid digit
+      matrix.print(digit2);
+
+      matrix.setCursor(10, 0); //set left digit
+      matrix.print(digit1);
+
+      //curVal = mappedVal;
+      //matrix.swapBuffers(true);
+      //delay(1000);
+    }
+    //delay(250);
+
+    matrix.setCursor(1, 9);
+    matrix.print("calibrate");
+
+    matrix.swapBuffers(false);
+    matrix.fillScreen(matrix.Color333(0, 0, 0));
+    matrix.swapBuffers(false);
+    
   }
 
   //write to config
@@ -207,7 +305,6 @@ void setup()
 
 void loop()
 {
-  // read analog values
 
   matrix.begin();
 
@@ -218,11 +315,37 @@ void loop()
   int laundryRaw = (analogRead(POTE));
   int lawnRaw = (analogRead(POTD));
 
-  int mappedShower = map(showerRaw, showerHi, showerLo, 0, 41);
+  int mappedShower = map(showerRaw, showerHi, showerLo, 0, 41 );
+  int mappedToilet = map(toiletRaw, toiletHi, toiletLo, 0, 51 );
+  int mappedSink = map(sinkRaw, sinkHi, sinkLo , 0 , 41);
+  int mappedDishes = map(dishesRaw, dishesHi, dishesLo , 0 , 8);
+  int mappedLaundry = map(laundryRaw, laundryHi, laundryLo, 0 , 29);
+  int mappedLawn = map(lawnRaw, lawnHi,lawnLo, 0 , 900);
 
-  mappedVal = (mappedShower);
-  //mappedVal= mappedWater;
-  // mappedVal= water;
+  int rawMapped = (mappedShower + mappedToilet + mappedSink + mappedDishes + mappedLaundry + mappedLawn);
+  
+
+  // subtract the last reading:
+  total = total - readings[readIndex];
+  // read from the sensor:
+  readings[readIndex] = rawMapped;
+  // add the reading to the total:
+  total = total + readings[readIndex];
+  // advance to the next position in the array:
+  readIndex = readIndex + 1;
+
+  // if we're at the end of the array...
+  if (readIndex >= numReadings) {
+    // ...wrap around to the beginning:
+    readIndex = 0;
+  }
+
+  // calculate the average:
+  mappedVal = total / numReadings;
+
+  
+  
+
 
   hue = map(mappedVal, 0, 100, 400, 0);
   if (hue < 50)
