@@ -33,7 +33,7 @@ MIT-license
 //define button
 #define BUTTON 31
 
-#define NUM_READS 100
+#define NUM_READS 10
 
 // global variables
 int mappedVal = 0;
@@ -57,7 +57,7 @@ long average = 0;                // the average
 int prevLawn = 500;
 
 
-//calibration variables store raw readouts of softpots
+//calibration variables store low and high points of softpots
 int showerLo;
 int showerHi;
 int toiletLo;
@@ -94,7 +94,7 @@ config_t config;
 RGBmatrixPanel matrix(A, B, C, CLK, LAT, OE, true);
 
 void calibrate();
-float reduceNoise(int mappedValue);
+int reduceNoise(int mappedValue);
 
 void setup()
 {
@@ -117,6 +117,8 @@ void setup()
   dishesHi = config.dishesHi;
   lawnLo = config.lawnLo;
   lawnHi = config.lawnHi;
+  laundryLo = config.laundryLo;
+  laundryHi = config.laundryHi;
 
   // initialize all the readings to 0:
   for (int thisReading = 0; thisReading < numReadings; thisReading++) 
@@ -161,79 +163,98 @@ void loop()
   lastButtonState = LOW;
   
 
- 
-  
-
-
-
+  //read sliders here
   int showerRaw = (analogRead(POTA));
   int toiletRaw = (analogRead(POTB));
   int sinkRaw = (analogRead(POTC));
-  int dishesRaw = (analogRead(POTF));
-  int laundryRaw = (analogRead(POTE));
-  int lawnRaw = (analogRead(POTD));
+  int dishesRaw = (analogRead(POTD));
+  int laundryRaw = (analogRead(POTF));
+  int lawnRaw = (analogRead(POTE));
 
-  //mapped values overshoot actual range (0,40) to allow the conditionals to
-  //"lock down" the values
-  int mappedShower = map(showerRaw, showerHi , (showerLo + 50)  , 0, 40 ); 
-  if (mappedShower < 0)
+  // map raw analog input to range.
+  int mappedShower = map(showerRaw, showerHi , showerLo , 0, 40 ); 
+  int smoothShower;
+  smoothShower = reduceNoise(mappedShower);
+
+  if (smoothShower <= 0)
   {
-    mappedShower = 0;
+    smoothShower = 0;
   }
-  if (mappedShower > 40)
+  if (smoothShower >= 38)
   {
-    mappedShower = 40;
-  }
-  
-  int mappedToilet = map(toiletRaw, toiletHi , toiletLo, -2, 52 );
-  if (mappedToilet < 0)
-  {
-    mappedToilet = 0;
-  }
-  if (mappedToilet > 50)
-  {
-    mappedToilet = 50;
+    smoothShower = 40;
   }
   
-  int mappedSink = map(sinkRaw, sinkHi , sinkLo , -2 , 42);
-  if (mappedSink < 0)
-  {
-    mappedSink = 0;
-  }
-  if (mappedSink > 40)
-  {
-    mappedSink = 40;
-  }
   
-  int mappedDishes = map(dishesRaw, dishesHi, dishesLo  , -2  , 9);
-  if (mappedDishes < 0)
-  {
-    mappedDishes = 0;
-  }
-  if (mappedDishes > 8)
-  {
-    mappedDishes = 8;
-  }
-  
-  int mappedLaundry = map(laundryRaw, laundryHi , laundryLo , -2 , 35);
-  if (mappedLaundry < 0)
-  {
-    mappedLaundry = 0;
-  }
-  if (mappedLaundry > 30)
-  {
-    mappedLaundry = 30;
-  }
 
   
+  int mappedToilet = map(toiletRaw, toiletHi , toiletLo, 0, 52 );
+  int smoothToilet;
+  smoothToilet =reduceNoise(mappedToilet);
+
+  if (smoothToilet <= 3)
+  {
+    smoothToilet = 0;
+  }
+  if (smoothToilet >= 50)
+  {
+    smoothToilet = 50;
+  }
+ 
   
-  int mappedLawn = map(lawnRaw, lawnHi , lawnLo , -10 , 1000);
+  int mappedSink = map(sinkRaw, sinkHi , sinkLo , 0 , 40);
+  int smoothSink;
+  smoothSink = reduceNoise(mappedSink);
+
+  if (smoothSink <= 1)
+  {
+    smoothSink = 0;
+  }
+  if (smoothSink >= 40)
+  {
+    smoothSink = 40;
+  }
+  
+  
+  int mappedDishes = map(dishesRaw, dishesHi, dishesLo  , 0  , 8);
+  int smoothDishes;
+  smoothDishes = reduceNoise(mappedDishes);
+
+  if (smoothDishes <= 01)
+  {
+    smoothDishes = 0;
+  }
+  if (smoothDishes >= 8)
+  {
+    smoothDishes = 8;
+  }
+  
+
+  
+  int mappedLaundry = map(laundryRaw, laundryHi , laundryLo , 0 , 30);
+  int smoothLaundry;
+  smoothLaundry = reduceNoise(mappedLaundry);
+  
+  if (smoothLaundry <= 0)
+  {
+    smoothLaundry = 0;
+  }
+  if (smoothLaundry >= 30)
+  {
+    smoothLaundry = 30;
+  }
+
+
+
+  
+  
+  int mappedLawn = map(lawnRaw, lawnHi , lawnLo , -50 , 900);
   
   // b/c the range of the lawn slider is so great, the input appears
   // noisier than the others, with ranges jumping up and down by about
   // 1-5. This statement only changes the value for mappedLawn if
   // it's over a threshold of 5.
-
+  
   if (abs(mappedLawn - prevLawn) > 5)
   {
     prevLawn = mappedLawn;
@@ -241,37 +262,71 @@ void loop()
   {
     mappedLawn = prevLawn;
   }
+
+  int smoothLawn;
+  smoothLawn = reduceNoise(mappedLawn);
   
   
   
 
-  if (mappedLawn < 10)
+  if (smoothLawn <= 40)
   {
-    mappedLawn = 0;
+    smoothLawn = 0;
   }
-  if (mappedLawn > 850)
+  if (smoothLawn > 850)
   {
-    mappedLawn = 900;
+    smoothLawn = 900;
   }
+
+
   
   
 
-  int rawMapped = (mappedShower + mappedToilet + mappedSink + mappedDishes + mappedLaundry + mappedLawn);
   
-  mappedVal = rawMapped;
+  // this is the actual constructor inc. smoothSink
+  //int smoothMapped = (smoothShower + smoothToilet + smoothSink + smoothDishes + smoothLaundry + smoothLawn);
+  //mappedVal = smoothMapped;
   
-  if (mappedVal < 0)
+  //temp remove sink b/c broken pot
+  int smoothMapped = (smoothShower + smoothToilet  + smoothDishes + smoothLaundry + smoothLawn);
+  mappedVal = smoothMapped;
+
+  //enforce zero floor
+  if (mappedVal <= 0)
   {
     mappedVal = 0;
   }
 
+  /*
+  //diagnostics - uncomment to print individual vars to serial monitor
+  Serial.print("smooth shower: ");
+  Serial.print(smoothShower);
+  Serial.print("\n");
+  Serial.print("smooth toilet: ");
+  Serial.print(smoothToilet);
+  Serial.print("\n");
+  Serial.print("smooth sink: ");
+  Serial.print(smoothSink);
+  Serial.print("\n");
+  Serial.print("smooth dishes: ");
+  Serial.print(smoothDishes);
+  Serial.print("\n");
+  Serial.print("smooth laundry: ");
+  Serial.print(smoothLaundry);
+  Serial.print("\n");
+  Serial.print("smooth lawn: ");
+  Serial.print(smoothLawn);
+  Serial.print("\n");
+  */
+
+  // colorize based on water usage.
   hue = map(mappedVal, 0, 100, 400, 0);
   if (hue < 50)
   {
     hue = 50;
   }
 
-  //read analog in
+  //LED matrix display code
 
   //convert int into indivs
   char strIn[3];
@@ -284,34 +339,28 @@ void loop()
   char digit2 = strIn[1];
   char digit3 = strIn[2];
 
-  //if(abs(mappedVal-curVal > 3)
   // fill the screen with 'black'
   matrix.fillScreen(matrix.Color333(0, 0, 0));
 
-  // draw some text!
-
+  // setup text
   matrix.setTextSize(1); // size 1 == 8 pixels high
   matrix.setTextColor(matrix.ColorHSV(hue, 255, 255, true));
-  // matrix.setCursor(0,8);
-  // matrix.print(mappedVal);
-  //matrix.print(digit1);
-  // matrix.print(digit2);
-  // matrix.print(digit3);
+  
 
-  //matrix.fillScreen(matrix.Color333(0, 0, 0));
-  //delay (100);
+  //in order to properly format the digits, we need
+  // to be able draw from right to left.
+  // this code splits the incoming int into
+  // up to 3 individual chars that are then
+  // manually positioned to create proper formatting
+
+  // if mappedVal < 10, then only right digit used
   if (mappedVal < 10)
   {
     matrix.setCursor(22, 0); //set right digit
     matrix.print(digit1);
-
-    //matrix.setCursor(18, 0); //set mid digit
-    //matrix.print(0);
-
-    //matrix.setCursor(0, 0); //set left digit
-    //matrix.print(0);
   }
 
+  // if mappedVal is between 10 - 99, use right and middle digit
   else if (mappedVal > 9 && mappedVal < 100)
   {
 
@@ -320,10 +369,8 @@ void loop()
 
     matrix.setCursor(16, 0); //set mid digit
     matrix.print(digit1);
-
-    //matrix.setCursor(0, 0); //set left digit
-    //matrix.print(0);
   }
+  // all other cases get 3 digits, inc. left
   else
   {
     matrix.setCursor(22, 0); //set right digit
@@ -334,22 +381,15 @@ void loop()
 
     matrix.setCursor(10, 0); //set left digit
     matrix.print(digit1);
-
-    //curVal = mappedVal;
-    //matrix.swapBuffers(true);
-    //delay(1000);
   }
-  //delay(250);
-
+ 
+  //print gal label on bottom row
   matrix.setCursor(10, 9);
   matrix.print("Gal");
-
+  
   matrix.swapBuffers(false);
-  //curVal=mappedVal;
-  //delay(1);
   matrix.fillScreen(matrix.Color333(0, 0, 0));
   matrix.swapBuffers(false);
-  //delay(1);
 }
 
 void calibrate()
@@ -357,16 +397,18 @@ void calibrate()
    //begin calibration code
   
   //set defaults
-  showerLo = 500;
-  showerHi = 500;
-  toiletLo = 500;
-  toiletHi = 500;
-  sinkLo = 500;
-  sinkHi = 500;
-  dishesLo = 500;
-  dishesHi = 500;
-  lawnLo = 500;
-  lawnHi = 500;
+  showerLo = 600;
+  showerHi = 200;
+  toiletLo = 600;
+  toiletHi = 200;
+  sinkLo = 600;
+  sinkHi = 200;
+  dishesLo = 600;
+  dishesHi = 200;
+  lawnLo = 600;
+  lawnHi = 200;
+  laundryLo = 600;
+  laundryHi = 200;
 
   startTime = millis();
   endTime = startTime;
@@ -471,6 +513,8 @@ void calibrate()
     char strIn[3];
     String tempStr;
 
+    //
+
     tempStr = String(mappedVal);   //convert int to string
     tempStr.toCharArray(strIn, 4); // pass values to char array
 
@@ -551,7 +595,7 @@ void calibrate()
 
 }
 
-float reduceNoise(long mappedValue)
+int reduceNoise(int mappedValue)
 {
     // read multiple values and sort them to take the mode
     long sortedValues[NUM_READS];
