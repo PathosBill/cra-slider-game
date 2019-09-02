@@ -6,7 +6,13 @@ This allows a user to estimate their weekly water consumption by changing the sl
 values.
 
 MIT-license
+
+YO! This code has the sink slider disabled b/c it is broken as of 9/2/19
+MAKE SURE TO RECONNECT THE PROPER CODE when it has been fixed.
+Lines 300 - 308
+
 */
+
 
 #include <Arduino.h>
 #include <Adafruit_GFX.h>   // Core graphics library
@@ -33,22 +39,26 @@ MIT-license
 //define button
 #define BUTTON 31
 
+//define number of reads for reduceNoise function
 #define NUM_READS 10
 
 // global variables
 int mappedVal = 0;
 int hue = 0;
+
+//calibration variables
 unsigned long countdown = 30000; //countdown time IN MSEC!!!
 unsigned long endTime;
 unsigned long startTime;
 
 //button variables
+//button is debounced manually, no debounce library used
 int buttonState =HIGH;             // the current reading from the input pin
 int lastButtonState = HIGH;   // the previous reading from the input pin
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 100;    // the debounce time; increase if the output flickers
 
-//variables for smoothing output
+//reduceNoise variables
 const int numReadings = 200; 
 long readings[numReadings];      // the readings from mappedVal
 int readIndex = 0;              // the index of the current reading
@@ -71,6 +81,10 @@ int lawnHi;
 int laundryLo;
 int laundryHi;
 
+
+// we store and retrieve calibration variables on the Arduino's EEPROM
+// using a struct so that we can read and write from address 0 w/o
+// counting addresses
 struct config_t
 {
   //calibration variables store raw readouts of softpots
@@ -88,11 +102,13 @@ struct config_t
   int laundryHi;
 };
 
-//init
+//init the struct
 config_t config;
 
+//init the RGBPanel matrix
 RGBmatrixPanel matrix(A, B, C, CLK, LAT, OE, true);
 
+//declare calibrate and reduceNoise functions
 void calibrate();
 int reduceNoise(int mappedValue);
 
@@ -101,8 +117,7 @@ void setup()
   Serial.begin(9600);
   pinMode(BUTTON, INPUT_PULLUP);
 
-  // load saved calibration values from eeprom
-   // = {950, 0, 940, 0, 930, 0, 900, 0, 940, 0, 930, 0};
+  // load config struct from eeprom
   EEPROM.get(0, config);
   Serial.println("read from EEPROM");
  
@@ -120,19 +135,21 @@ void setup()
   laundryLo = config.laundryLo;
   laundryHi = config.laundryHi;
 
-  // initialize all the readings to 0:
+  // initialize all the  reduceNoise readings to 0:
   for (int thisReading = 0; thisReading < numReadings; thisReading++) 
   {
     readings[thisReading] = 0;
   }
 
-  //inititalize prev laundry
+  
 }
 
 void loop()
 {
-  matrix.begin();
 
+  matrix.begin();  // b/c matrix is soldered to pins, there's no i2c address
+
+  // button logic:
   // read the state of the switch into a local variable:
   int reading = digitalRead(BUTTON);
 
@@ -154,16 +171,16 @@ void loop()
     if (reading != buttonState) {
       buttonState = reading;
 
-      // trigger calibration
+      // trigger calibration function
       calibrate();
       
       }
     }
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  // set lastButtonState to low to allow retriggering of calibration function
   lastButtonState = LOW;
   
 
-  //read sliders here
+  //read  raw values of sliders 
   int showerRaw = (analogRead(POTA));
   int toiletRaw = (analogRead(POTB));
   int sinkRaw = (analogRead(POTC));
@@ -173,9 +190,11 @@ void loop()
 
   // map raw analog input to range.
   int mappedShower = map(showerRaw, showerHi , showerLo , 0, 40 ); 
+  //run reduceNoise function on mapped input
   int smoothShower;
   smoothShower = reduceNoise(mappedShower);
-
+  
+  // set bounds for input. Forces proper min / max values
   if (smoothShower <= 0)
   {
     smoothShower = 0;
@@ -215,11 +234,14 @@ void loop()
     smoothSink = 40;
   }
   
-  
-  int mappedDishes = map(dishesRaw, dishesHi, dishesLo  , 0  , 8);
+  // because mappedDishes is on such a small scale, we set max to 9
+  // instead of 8 to increase the area of the slider that reports max
+  int mappedDishes = map(dishesRaw, dishesHi, dishesLo  , 0  , 9);
   int smoothDishes;
   smoothDishes = reduceNoise(mappedDishes);
 
+  //same here, we count a value of 1 as 0 in order to improve feel
+  // it means there's a wider range that reports 0 on the slider
   if (smoothDishes <= 01)
   {
     smoothDishes = 0;
@@ -248,7 +270,7 @@ void loop()
 
   
   
-  int mappedLawn = map(lawnRaw, lawnHi , lawnLo , -50 , 900);
+  int mappedLawn = map(lawnRaw, (lawnHi - 10) , lawnLo , 0 , 900);
   
   // b/c the range of the lawn slider is so great, the input appears
   // noisier than the others, with ranges jumping up and down by about
@@ -265,24 +287,17 @@ void loop()
 
   int smoothLawn;
   smoothLawn = reduceNoise(mappedLawn);
-  
-  
-  
 
-  if (smoothLawn <= 40)
+  if (smoothLawn <= 0)
   {
     smoothLawn = 0;
   }
-  if (smoothLawn > 850)
+  if (smoothLawn >= 950)
   {
-    smoothLawn = 900;
+    smoothLawn = 950;
   }
 
-
-  
-  
-
-  
+ 
   // this is the actual constructor inc. smoothSink
   //int smoothMapped = (smoothShower + smoothToilet + smoothSink + smoothDishes + smoothLaundry + smoothLawn);
   //mappedVal = smoothMapped;
@@ -318,6 +333,7 @@ void loop()
   Serial.print(smoothLawn);
   Serial.print("\n");
   */
+  
 
   // colorize based on water usage.
   hue = map(mappedVal, 0, 100, 400, 0);
