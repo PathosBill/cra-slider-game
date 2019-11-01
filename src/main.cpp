@@ -7,10 +7,6 @@ values.
 
 MIT-license
 
-YO! This code has the sink slider disabled b/c it is broken as of 9/2/19
-MAKE SURE TO RECONNECT THE PROPER CODE when it has been fixed.
-Lines 300 - 308
-
 */
 
 
@@ -32,9 +28,9 @@ Lines 300 - 308
 #define POTA A0
 #define POTB A1
 #define POTC A2
-#define POTD A3
-#define POTE A4
-#define POTF A5
+#define POTF A3
+#define POTD A4
+#define POTE A5
 
 //define button
 #define BUTTON 31
@@ -53,9 +49,9 @@ unsigned long startTime;
 
 //button variables
 //button is debounced manually, no debounce library used
-int buttonState =HIGH;             // the current reading from the input pin
-int lastButtonState = HIGH;   // the previous reading from the input pin
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+int buttonState =LOW;             // the current reading from the input pin
+int lastButtonState = LOW;   // the previous reading from the input pin
+unsigned long lastDebounceTime = 100;  // the last time the output pin was toggled
 unsigned long debounceDelay = 100;    // the debounce time; increase if the output flickers
 
 //reduceNoise variables
@@ -167,14 +163,12 @@ void loop()
     // whatever the reading is at, it's been there for longer than the debounce
     // delay, so take it as the actual current state:
 
-    // if the button state has changed:
-    if (reading != buttonState) {
-      buttonState = reading;
+    
 
       // trigger calibration function
       calibrate();
       
-      }
+      
     }
   // set lastButtonState to low to allow retriggering of calibration function
   lastButtonState = LOW;
@@ -270,25 +264,26 @@ void loop()
 
   
   
-  int mappedLawn = map(lawnRaw, (lawnHi - 10) , lawnLo , 0 , 900);
+  int mappedLawn = map(lawnRaw, lawnHi  , lawnLo , 0  , 950);
   
   // b/c the range of the lawn slider is so great, the input appears
   // noisier than the others, with ranges jumping up and down by about
   // 1-5. This statement only changes the value for mappedLawn if
   // it's over a threshold of 5.
   
-  if (abs(mappedLawn - prevLawn) > 5)
+  /*if (abs(mappedLawn - prevLawn) > 5)
   {
     prevLawn = mappedLawn;
   } else
   {
     mappedLawn = prevLawn;
   }
+  */
 
   int smoothLawn;
   smoothLawn = reduceNoise(mappedLawn);
 
-  if (smoothLawn <= 0)
+  if (smoothLawn <= 10)
   {
     smoothLawn = 0;
   }
@@ -299,17 +294,24 @@ void loop()
 
  
   // this is the actual constructor inc. smoothSink
-  //int smoothMapped = (smoothShower + smoothToilet + smoothSink + smoothDishes + smoothLaundry + smoothLawn);
-  //mappedVal = smoothMapped;
+  int smoothMapped = (smoothShower + smoothToilet + smoothSink + smoothDishes + smoothLaundry + smoothLawn);
+  
   
   //temp remove sink b/c broken pot
-  int smoothMapped = (smoothShower + smoothToilet  + smoothDishes + smoothLaundry + smoothLawn);
+ //int smoothMapped = (smoothShower + smoothToilet  + smoothDishes + smoothLaundry + smoothLawn);
+  
   mappedVal = smoothMapped;
 
   //enforce zero floor
-  if (mappedVal <= 0)
+  if (mappedVal <= 1)
   {
     mappedVal = 0;
+  }
+
+  //enforce 999 ceiling
+  if (mappedVal <= 999)
+  {
+    mappedVal = 999;
   }
 
   /*
@@ -331,7 +333,13 @@ void loop()
   Serial.print("\n");
   Serial.print("smooth lawn: ");
   Serial.print(smoothLawn);
+  //Serial.print("\n");
+  // Serial.print("\n");
+  //Serial.print("mapped lawn: ");
+  //Serial.print(mappedLawn);
   Serial.print("\n");
+  Serial.print("raw lawn: ");
+  Serial.print(lawnRaw);
   */
   
 
@@ -413,18 +421,18 @@ void calibrate()
    //begin calibration code
   
   //set defaults
-  showerLo = 600;
-  showerHi = 200;
-  toiletLo = 600;
-  toiletHi = 200;
-  sinkLo = 600;
-  sinkHi = 200;
-  dishesLo = 600;
-  dishesHi = 200;
-  lawnLo = 600;
-  lawnHi = 200;
-  laundryLo = 600;
-  laundryHi = 200;
+  showerLo = 100;
+  showerHi = 800;
+  toiletLo = 100;
+  toiletHi = 800;
+  sinkLo = 100;
+  sinkHi = 800;
+  dishesLo = 100;
+  dishesHi = 800;
+  lawnLo = 50;
+  lawnHi = 829;
+  laundryLo = 60;
+  laundryHi = 800;
 
   startTime = millis();
   endTime = startTime;
