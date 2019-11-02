@@ -28,9 +28,10 @@ MIT-license
 #define POTA A0
 #define POTB A1
 #define POTC A2
-#define POTF A3
-#define POTD A4
-#define POTE A5
+#define POTD A3
+#define POTE A4
+#define POTF A5
+
 
 //define button
 #define BUTTON 31
@@ -309,39 +310,39 @@ void loop()
   }
 
   //enforce 999 ceiling
-  if (mappedVal <= 999)
+  if (mappedVal >= 999)
   {
     mappedVal = 999;
   }
 
   /*
   //diagnostics - uncomment to print individual vars to serial monitor
-  Serial.print("smooth shower: ");
-  Serial.print(smoothShower);
-  Serial.print("\n");
-  Serial.print("smooth toilet: ");
-  Serial.print(smoothToilet);
-  Serial.print("\n");
-  Serial.print("smooth sink: ");
-  Serial.print(smoothSink);
-  Serial.print("\n");
-  Serial.print("smooth dishes: ");
-  Serial.print(smoothDishes);
-  Serial.print("\n");
-  Serial.print("smooth laundry: ");
-  Serial.print(smoothLaundry);
-  Serial.print("\n");
-  Serial.print("smooth lawn: ");
-  Serial.print(smoothLawn);
+  //Serial.print("smooth shower: ");
+  //Serial.print(smoothShower);
   //Serial.print("\n");
-  // Serial.print("\n");
-  //Serial.print("mapped lawn: ");
-  //Serial.print(mappedLawn);
+  //Serial.print("smooth toilet: ");
+  //Serial.print(smoothToilet);
+  //Serial.print("\n");
+  //Serial.print("smooth sink: ");
+  //Serial.print(smoothSink);
+  Serial.print("\n");
+  Serial.print("raw dishes: ");
+  Serial.print(dishesRaw);
+  Serial.print("\n");
+  //Serial.print("smooth laundry: ");
+ // Serial.print(smoothLaundry);
   Serial.print("\n");
   Serial.print("raw lawn: ");
   Serial.print(lawnRaw);
-  */
+  Serial.print("\n");
+  // Serial.print("\n");
+  //Serial.print("mapped lawn: ");
+  //Serial.print(mappedLawn);
+ // Serial.print("\n");
+  //Serial.print("raw lawn: ");
+ // Serial.print(lawnRaw);
   
+*/
 
   // colorize based on water usage.
   hue = map(mappedVal, 0, 100, 400, 0);
