@@ -5,6 +5,9 @@ This code runs on an Arduino Mega attached to 6 linear softpots.
 This allows a user to estimate their weekly water consumption by changing the slider / softpot
 values.
 
+As of Oct 31 2019, all hardware is connected to the same pins. In the past there were sometimes different programs for the left
+and right slidergames, owing to having sliders connected to different pins. This has been fixed.
+
 MIT-license
 
 */
